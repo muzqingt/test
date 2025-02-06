@@ -1,20 +1,309 @@
----
-layout: default
----
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>22305班 2/6 每日总结</title>
+  <style>
+    /* 引入 Google 字体 */
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Lato:wght@300;400;700&display=swap');
 
-<div class="main-post-list hidden">
+   
+    html, body { width: 100%; height: 100%; overflow: hidden;  }
 
-  <ol class="post-list">
-    {% for post in paginator.posts %}
-    <li>
-      <h2 class="post-list__post-title post-title"><a href="{{ post.url }}" title="访问 {{ post.title }}">{{ post.title }}</a></h2>
-      <p class="excerpt">{{ post.content | strip_html | strip_newlines | truncate: 250 }}&hellip;</p>
-      <div class="post-list__meta"><time datetime="{{post.date | date: date_to_xmlschema}}" class="post-list__meta--date date">{{ post.date | date: "%F"}}</time> &#8226; <span class="post-list__meta--tags tags">{{ post.tags | join:' ' }}</span><a class="btn-border-small" href={{ post.url }}>继续阅读</a></div>
-      <hr class="post-list__divider" />
-    </li>
-    {% endfor %}
-  </ol>
+    /* 横屏提示遮罩（当设备为竖屏时显示） */
+    #orientation-warning {
+      position: fixed;
+      z-index: 1000;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.8);
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.5em;
+      text-align: center;
+      padding: 20px;
+      display: none;
+    }
 
-  {% include pagination.html %}
+    /* 整体背景：明亮清新的蓝白渐变 */
+    body {
+      background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+      color: #333;
+    }
 
-</div>
+    /* 每个页面全屏显示，采用淡入缩放动画 */
+    .page {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      animation: fadeInScale 0.6s ease;
+    }
+    .page.active { display: flex; }
+
+    /* 玻璃拟态卡片：半透明、模糊背景 */
+    .card {
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 20px;
+      padding: 30px;
+      max-width: 600px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 8px 32px 0 rgba(31,38,135,0.37);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.18);
+      position: relative;
+    }
+
+    /* 页眉标题 */
+    h1, h2 {
+      font-family: 'Playfair Display', serif;
+      margin-bottom: 20px;
+      color: #2c3e50;
+    }
+
+    /* 正文段落 */
+    p { margin-bottom: 20px; line-height: 1.6; font-size: 1.1em; }
+
+    /* 倒计时样式：各时间段以数字盒子形式呈现 */
+    .countdown {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .time-box {
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 10px;
+      padding: 10px 15px;
+      min-width: 60px;
+      font-size: 1.8em;
+      font-weight: bold;
+      color: #2c3e50;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      transition: transform 0.3s ease;
+    }
+    .time-box:hover { transform: scale(1.05); }
+
+    /* 按钮样式：金属感渐变按钮 */
+    .btn {
+      display: inline-block;
+      margin: 10px 5px;
+      padding: 12px 24px;
+      background: linear-gradient(135deg, #2c3e50, #34495e);
+      color: #ecf0f1;
+      text-decoration: none;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+    }
+
+    /* 文本区域样式 */
+    textarea {
+      width: 100%;
+      height: 140px;
+      padding: 15px;
+      border: none;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.8);
+      color: #2c3e50;
+      box-shadow: inset 0 4px 8px rgba(0,0,0,0.1);
+      resize: none;
+      font-size: 1em;
+      margin-top: 15px;
+    }
+
+    /* 视频容器（支持全屏播放） */
+    .video-container {
+      position: relative;
+      padding-bottom: 56.25%;
+      height: 0;
+      overflow: hidden;
+      border-radius: 20px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    .video-container iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* 春晚祝福大图 */
+    .card img {
+      width: 100%;
+      border-radius: 15px;
+      margin: 20px 0;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    }
+
+    /* 页脚提示主题 */
+    .footer {
+      position: absolute;
+      bottom: 10px;
+      right: 20px;
+      font-size: 0.9em;
+      color: #2c3e50;
+    }
+
+    /* 页面切换动画 */
+    @keyframes fadeInScale {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+  <!-- 横屏提示（当宽度小于高度时显示） -->
+  <div id="orientation-warning">请横屏查看</div>
+
+  <!-- 板块1：高考倒计时 -->
+  <div id="page-countdown" class="page active">
+    <div class="card">
+      <h1>22305班 2/6 每日总结 · 高考倒计时</h1>
+      <div class="countdown" id="countdown-timer">
+        <div class="time-box" id="days">--</div>
+        <div class="time-box" id="hours">--</div>
+        <div class="time-box" id="minutes">--</div>
+        <div class="time-box" id="seconds">--</div>
+      </div>
+      <p>每一秒都在塑造未来，立刻启程，全力以赴！</p>
+      <div>
+        <span class="btn" onclick="switchPage('page-video')">下一步：视频分享</span>
+      </div>
+      <div class="footer">22305班 2/6 每日总结</div>
+    </div>
+  </div>
+
+  <!-- 板块2：视频分享 -->
+  <div id="page-video" class="page">
+    <div class="card">
+      <h2>22305班 2/6 每日总结 · 视频分享</h2>
+      <p>观看这段激励视频，感受激情与科技的力量！</p>
+      <div class="video-container">
+        <iframe src="https://www.bilibili.com/video/BV18HFQeSEc3/?buvid=XU642E16312A14AE64D7A8DE72621DD33A88A&is_story_h5=false&mid=Z863XyRIJI7Sbn4yo0i8Ig%3D%3D&p=1&share_from=ugc&share_medium=android&share_plat=android&share_session_id=d04e4b13-44c5-4646-a54d-294c2481777d&share_source=COPY&share_tag=s_i&spmid=main.my-favorite.option-more.0.click&timestamp=1738844176&unique_k=j31vD7r&up_id=2116071253" frameborder="0" allow="fullscreen" allowfullscreen></iframe>
+      </div>
+      <div>
+        <span class="btn" onclick="switchPage('page-countdown')">返回倒计时</span>
+        <span class="btn" onclick="switchPage('page-reflection')">下一步：做最好的自己</span>
+      </div>
+      <div class="footer">22305班 2/6 每日总结</div>
+    </div>
+  </div>
+
+  <!-- 板块3：做最好的自己 -->
+  <div id="page-reflection" class="page">
+    <div class="card">
+      <h2>22305班 2/6 每日总结 · 做最好的自己</h2>
+      <p>回顾今日努力，规划明日目标，成就更卓越的你！</p>
+      <textarea placeholder="写下你的反思与计划..."></textarea>
+      <div>
+        <span class="btn" onclick="switchPage('page-video')">返回视频分享</span>
+        <span class="btn" onclick="switchPage('page-wishes')">下一步：春晚的祝福</span>
+      </div>
+      <div class="footer">22305班 2/6 每日总结</div>
+    </div>
+  </div>
+
+  <!-- 板块4：春晚的祝福（插入大图） -->
+  <div id="page-wishes" class="page">
+    <div class="card">
+      <h2>22305班 2/6 每日总结 · 春晚的祝福</h2>
+      <p>愿这份美好的祝福点燃心中的希望，迎接璀璨明天！</p>
+      <!-- 请确保将图片 spring_festival.jpg 放在此 HTML 同一目录下 -->
+      <img src="https://images.cnblogs.com/cnblogs_com/blogs/763073/galleries/2443356/o_250206125408_%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250206205354.jpg" alt="春晚祝福">
+      <div>
+        <span class="btn" onclick="switchPage('page-reflection')">返回做最好的自己</span>
+        <span class="btn" onclick="switchPage('page-letter')">下一步：给百日誓师的自己写信</span>
+      </div>
+      <div class="footer">22305班 2/6 每日总结</div>
+    </div>
+  </div>
+
+  <!-- 板块5：给百日誓师的自己写信 -->
+  <div id="page-letter" class="page">
+    <div class="card">
+      <h2>22305班 2/6 每日总结 · 给百日誓师的自己写信</h2>
+      <p>将你对未来的期许、梦想的执着和今日心情倾诉于此，未来回望，定见成长的足迹！</p>
+      <textarea placeholder="写下你的心声..."></textarea>
+      <div>
+        <span class="btn" onclick="switchPage('page-wishes')">返回春晚的祝福</span>
+        <span class="btn" onclick="switchPage('page-blessing')">下一步：多喜乐长安宁</span>
+      </div>
+      <div class="footer">22305班 2/6 每日总结</div>
+    </div>
+  </div>
+
+  <!-- 板块6：多喜乐长安宁的祝福 -->
+  <div id="page-blessing" class="page">
+    <div class="card">
+      <h2>22305班 2/6 每日总结 · 多喜乐长安宁</h2>
+      <p>愿你的人生充满喜悦、平安与无限可能！</p>
+      <p style="font-size:1.3em; font-weight:700; color:#2c3e50;">多喜乐长安宁</p>
+      <div>
+        <span class="btn" onclick="switchPage('page-letter')">返回给信</span>
+        <span class="btn" onclick="switchPage('page-countdown')">返回倒计时</span>
+      </div>
+      <div class="footer">22305班 2/6 每日总结</div>
+    </div>
+  </div>
+
+  <!-- JavaScript：页面切换、倒计时更新及横屏检测 -->
+  <script>
+    // 页面切换函数：隐藏所有 .page，再显示指定 id 的页面
+    function switchPage(pageId) {
+      document.querySelectorAll('.page').forEach(function(page) {
+        page.classList.remove('active');
+      });
+      document.getElementById(pageId).classList.add('active');
+    }
+
+    // 倒计时更新函数
+    function updateCountdown() {
+      // 示例目标：当前时间加 121 天（如有需要可修改为具体的高考日期）
+      const now = new Date();
+      const target = new Date(now.getTime() + 121 * 24 * 60 * 60 * 1000);
+      const diff = target - now;
+      if(diff < 0) return;
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+      const minutes = Math.floor((diff / (1000 * 60)) % 60);
+      const seconds = Math.floor((diff / 1000) % 60);
+      document.getElementById('days').textContent = days.toString().padStart(2, '0');
+      document.getElementById('hours').textContent = hours.toString().padStart(2, '0');
+      document.getElementById('minutes').textContent = minutes.toString().padStart(2, '0');
+      document.getElementById('seconds').textContent = seconds.toString().padStart(2, '0');
+    }
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+
+    // 横屏检测：当视口宽度小于高度时显示横屏提示
+    function checkOrientation() {
+      const warning = document.getElementById('orientation-warning');
+      if(window.innerWidth < window.innerHeight) {
+        warning.style.display = 'flex';
+      } else {
+        warning.style.display = 'none';
+      }
+    }
+    checkOrientation();
+    window.addEventListener('resize', checkOrientation);
+  </script>
+</body>
+</html>
